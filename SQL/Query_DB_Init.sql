@@ -23,6 +23,7 @@ CREATE TABLE `Tramwaj`
  `ID_Tramwaju`       int NOT NULL AUTO_INCREMENT ,
  `Prog_Godzinowy`    int NOT NULL DEFAULT 1000 ,
  `Aktualny_Przebieg` float NOT NULL DEFAULT 0 ,
+  `Version`         int NOT NULL DEFAULT 0 ,
 PRIMARY KEY (`ID_Tramwaju`)
 );
 
@@ -40,6 +41,7 @@ CREATE TABLE `Motorniczy`
  `Nazwisko`        varchar(45) NOT NULL ,
  `Stawka`          float NOT NULL DEFAULT 12 ,
  `Zatrudniony`     bit NOT NULL DEFAULT 1 ,
+  `Version`         int NOT NULL DEFAULT 0 ,
 PRIMARY KEY (`ID_Motorniczego`)
 );
 
@@ -54,6 +56,7 @@ CREATE TABLE `Linia`
 (
  `ID_Linii`    int NOT NULL AUTO_INCREMENT ,
  `Numer_Linii` int NOT NULL ,
+  `Version`         int NOT NULL DEFAULT 0 ,
 PRIMARY KEY (`ID_Linii`)
 );
 
@@ -172,7 +175,6 @@ FOR EACH ROW BEGIN
 	DECLARE Wynagrodzenie_ float;
     DECLARE Nowy_Przebieg_ float;
     DECLARE Stary_Przebieg_ float;
-
 
 	if NEW.KoniecPracy IS NOT NULL THEN
 		SELECT Obliczanie_Wynagrodzenia(NEW.ID_Motorniczego, NEW.ID_Pracy) INTO Wynagrodzenie_;
