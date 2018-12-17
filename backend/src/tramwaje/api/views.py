@@ -1,16 +1,15 @@
-from rest_framework.generics import  GenericAPIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.views import APIView
 from tramwaje.models import Tramwaj, Linia, Motorniczy, Praca
 from .serializers import TramwajSerializer, LiniaSerializer, PracaSerializer, MotorniczySerializer
-from django.db import IntegrityError
+from django.db.models import Sum
 from rest_framework.response import Response
-from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, ListModelMixin, CreateModelMixin
-from rest_framework import status
-from django.http import Http404
-import json 
-from django.db import transaction
+from rest_framework.mixins import ListModelMixin, CreateModelMixin
+from datetime import date, timedelta
 
 versions = {}
+
+
 class test(APIView):
     '''Test praca detail'''
     model_name = "Praca"
@@ -28,12 +27,13 @@ class test(APIView):
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
-            
+
 
 class PracaView(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
     serializer_class = PracaSerializer
+
     def get(self, request, pk):
         global versions
         try:
@@ -45,6 +45,7 @@ class PracaView(APIView):
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
+
     def put(self, request, pk):
         global versions
         updated = Praca.objects.all().filter(id_pracy=pk)[0]
@@ -59,31 +60,94 @@ class PracaView(APIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+
 class PracaViewForOnePerson(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
     serializer_class = PracaSerializer
+
     def get(self, request, id_motorniczego):
-        global versions
         try:
             x = Praca.objects.all().filter(id_motorniczego=id_motorniczego)
             all_ = []
             for praca in x:
                 y = PracaSerializer(praca)
                 all_.append(y.data)
-        
+
             return Response(all_)
         except Exception as e:
             return Response({'message': f'{e}'})
-  
 
 
+class Praca30dayViewForOnePerson(APIView):
+    model_name = "Praca"
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
 
+    def get(self, request, id_motorniczego, datetime_year, datetime_month, datetime_day):
+        try:
+            start = date(datetime_year, datetime_month, datetime_day)
+            end = start + timedelta(days=30)
+            x = Praca.objects.all().filter(id_motorniczego=id_motorniczego, poczatekpracy__range=[start, end])
+            all_ = []
+            for praca in x:
+                y = PracaSerializer(praca)
+                all_.append(y.data)
+
+            return Response(all_)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+class MotorniczyTopN(APIView):
+    model_name = "Praca"
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request, n):
+        try:
+            x = Praca.objects.values('id_motorniczego').annotate(Sum('wynagrodzenie'))[:n]
+            all_ = []
+            for p in x:
+                motorniczy = Motorniczy.objects.all().filter(id_motorniczego=p['id_motorniczego'])
+
+                motorniczy.sum = p['wynagrodzenie__sum']
+                y = MotorniczySerializer(motorniczy[0])
+                new = dict(y.data)
+                new['sum'] = p['wynagrodzenie__sum']
+                all_.append(new)
+
+            return Response(all_)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+class TramwajTopN(APIView):
+    model_name = "Praca"
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request, n):
+        try:
+            x = Praca.objects.values('id_tramwaju').annotate(Sum(''))[:n]
+            all_ = []
+            for p in x:
+                motorniczy = Motorniczy.objects.all().filter(id_motorniczego=p['id_motorniczego'])
+
+                motorniczy.sum = p['wynagrodzenie__sum']
+                y = MotorniczySerializer(motorniczy[0])
+                new = dict(y.data)
+                new['sum'] = p['wynagrodzenie__sum']
+                all_.append(new)
+
+            return Response(all_)
+        except Exception as e:
+            return Response({'message': f'{e}'})
 
 class TramwajView(APIView):
     model_name = "Tramwaj"
     queryset = Tramwaj.objects.all()
     serializer_class = TramwajSerializer
+
     def get(self, request, pk):
         global versions
         try:
@@ -115,6 +179,7 @@ class LiniaView(APIView):
     model_name = "Linia"
     queryset = Linia.objects.all()
     serializer_class = LiniaSerializer
+
     def get(self, request, pk):
         global versions
         try:
@@ -140,7 +205,6 @@ class LiniaView(APIView):
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-
 
 
 class MotorniczyView(APIView):
@@ -173,88 +237,19 @@ class MotorniczyView(APIView):
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-##view for tabel 
 
-class TramwajListView(ListModelMixin, CreateModelMixin,GenericAPIView):
+
+##view for tabel
+
+class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
     queryset = Tramwaj.objects.all()
     serializer_class = TramwajSerializer
-    def get(self, request, *args, **kwargs):
-        try:
-            return self.list(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-    def post(self, request, *args, **kwargs):
-        try:
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-
- 
-
-class LiniaListView(ListModelMixin, CreateModelMixin,GenericAPIView):
-    queryset = Linia.objects.all()
-    serializer_class = LiniaSerializer
-    def get(self, request, *args, **kwargs):
-        try:
-            return self.list(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-    def post(self, request, *args, **kwargs):
-        try:
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-   
-class MotorniczyListView(ListModelMixin, CreateModelMixin,GenericAPIView):
-    queryset = Motorniczy.objects.all()
-    serializer_class = MotorniczySerializer
 
     def get(self, request, *args, **kwargs):
         try:
             return self.list(request, *args, **kwargs)
         except Exception as e:
-            return Response({'message':f'{e}'})
-    def post(self, request, *args, **kwargs):
-        try:
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-
-class PracaListView(ListModelMixin, CreateModelMixin,GenericAPIView):
-
-
-    queryset = Praca.objects.all()
-    serializer_class = PracaSerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            return self.list(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message':f'{e}'})
-
-  
-
-
-class PracaDetailView(APIView):
-
-    queryset = Praca.objects.all()
-    serializer_class = PracaSerializer
-
-    def get(self, request, pk):
-            try:
-                x = Praca.objects.all().filter(id_pracy=pk)
-                y = PracaSerializer(x[0])
-                print(self.version)
-                self.version = x[0].version
-                return Response(y.data)
-            except Exception as e:
-                return Response({'message': f'{e}'})
+            return Response({'message': f'{e}'})
 
     def post(self, request, *args, **kwargs):
         try:
@@ -262,3 +257,74 @@ class PracaDetailView(APIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+
+class LiniaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Linia.objects.all()
+    serializer_class = LiniaSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+class MotorniczyListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Motorniczy.objects.all()
+    serializer_class = MotorniczySerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+class PracaDetailView(APIView):
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request, pk):
+        try:
+            x = Praca.objects.all().filter(id_pracy=pk)
+            y = PracaSerializer(x[0])
+            print(self.version)
+            self.version = x[0].version
+            return Response(y.data)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})

@@ -10,9 +10,12 @@ from .views import (
     TramwajView, 
     LiniaView, 
     PracaView, 
-    PracaViewForOnePerson, 
-    
-  
+    PracaViewForOnePerson,
+    Praca30dayViewForOnePerson,
+    MotorniczyTopN,
+    TramwajTopN
+
+
 )
 
 
@@ -37,6 +40,10 @@ urlpatterns = [
     path('linia/<pk>/delete', LiniaView.as_view()),
     path('praca/<pk>/delete', PracaView.as_view()),
     path('tramwaj/<pk>/delete', TramwajView.as_view()),
-    path('praca/motorniczy/<int:id_motorniczego>', PracaViewForOnePerson.as_view())
+    path('praca/motorniczy/<int:id_motorniczego>', PracaViewForOnePerson.as_view()),
+    path('praca/motorniczy/<int:id_motorniczego>/<int:datetime_year>/<int:datetime_month>/<int:datetime_day>', Praca30dayViewForOnePerson.as_view()),
+
+    path('motorniczy/top/<int:n>', MotorniczyTopN.as_view()),
+    path('tramwaj/top/<int:n>', TramwajTopN.as_view()),
 
 ]
