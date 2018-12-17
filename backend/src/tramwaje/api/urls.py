@@ -33,10 +33,10 @@ urlpatterns = [
     path('linia/update/<pk>', LiniaView.as_view()),
     path('praca/update/<pk>', PracaView.as_view()),
     path('tramwaj/update/<pk>', TramwajView.as_view()),
-    path('motorniczy/<pk>/delate', MotorniczyView.as_view()),
-    path('linia/<pk>/delate', LiniaView.as_view()),
-    path('praca/<pk>/delate', PracaView.as_view()),
-    path('tramwaj/<pk>/delate', TramwajView.as_view()),
+    path('motorniczy/<pk>/delete', MotorniczyView.as_view()),
+    path('linia/<pk>/delete', LiniaView.as_view()),
+    path('praca/<pk>/delete', PracaView.as_view()),
+    path('tramwaj/<pk>/delete', TramwajView.as_view()),
     path('praca/motorniczy/<int:id_motorniczego>', PracaViewForOnePerson.as_view())
 
 ]
