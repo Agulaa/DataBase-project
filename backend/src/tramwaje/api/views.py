@@ -121,6 +121,48 @@ class MotorniczyTopN(APIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+class MotorniczyTopNOkres(APIView):
+    model_name = "Praca"
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request,datetime_year, quarter):
+        try:
+            
+            if quarter==1:
+                start = date(datetime_year, quarter, 1)
+                end = date(datetime_year, quarter+2, 31)
+            elif quarter==2:
+                start = date(datetime_year, quarter*2, 1)
+                end = date(datetime_year, quarter*2+2, 30)
+            elif quarter==3:
+                start = date(datetime_year, quarter*2+1, 1)
+                end = date(datetime_year, quarter*2+3, 30)
+            else:
+                start = date(datetime_year, quarter*2+2, 1)
+                end = date(datetime_year, quarter*2+4, 31)
+            
+            #.values('id_motorniczego').annotate(Sum('wynagrodzenie'))
+            a = Praca.objects.all().filter(poczatekpracy__range=[start, end]).aggregate(Sum('wynagrodzenie'))
+            print(a)
+            x = Praca.objects.all().filter(poczatekpracy__range=[start, end]).values('id_motorniczego').annotate(Sum('wynagrodzenie'))
+    
+            all_ = []
+            for p in x:
+                motorniczy = Motorniczy.objects.all().filter(id_motorniczego=p['id_motorniczego'])
+                motorniczy.sum = p['wynagrodzenie__sum']
+                y = MotorniczySerializer(motorniczy[0])
+                new = dict(y.data)
+                new['sum'] = p['wynagrodzenie__sum']
+                new['okres_od'] = start
+                new['okres_do'] = end
+                new['caly_zarobek']= a['wynagrodzenie__sum']
+                all_.append(new)
+
+            return Response(all_)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
 class TramwajTopN(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
