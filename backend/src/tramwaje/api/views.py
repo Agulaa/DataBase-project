@@ -15,22 +15,6 @@ versions = {}
 client = MongoClient('localhost', 27017)
 db = client['tramwajeLogi']
 
-class testMongo(APIView):
-    '''Test praca detail'''
-    model_name = "Test"
-   
-    # queryset = Praca.objects.all()
-    # serializer_class = PracaSerializer
-
-    def get(self, request):
-        global versions
-        try:
-            dic =  db['tramwaje'].find_one()
-            del dic['_id']
-            return Response(dic)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
 class test(APIView):
     '''Test praca detail'''
     model_name = "Praca"
@@ -67,7 +51,7 @@ class PracaView(APIView):
                 {
                     "time": datetime.datetime.utcnow(), 
                     "typerequest":"GET", 
-                    "description":f"Wyświetlenie {pk} pracy"
+                    "description":f"Wyświetlenie pracy o id {pk}."
                 }
             )
             return Response(y.data)
@@ -83,6 +67,13 @@ class PracaView(APIView):
             serializer = PracaSerializer(updated, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"PUT", 
+                    "description":f"Aktualizacja pracy o id {pk}."
+                }
+                )
                 return Response(serializer.data)
             return Response(serializer.errors)
         except Exception as e:
@@ -101,7 +92,13 @@ class PracaViewForOnePerson(APIView):
             for praca in x:
                 y = PracaSerializer(praca)
                 all_.append(y.data)
-
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie pracy dla motorniczego o id {id_motorniczego}."
+                }
+                )
             return Response(all_)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -121,6 +118,13 @@ class Praca30dayViewForOnePerson(APIView):
             for praca in x:
                 y = PracaSerializer(praca)
                 all_.append(y.data)
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie pracy dla motorniczego o id {id_motorniczego} z 30 dni od podania daty {datetime_day}.{datetime_month}.{datetime_year}."
+                }
+                )
 
             return Response(all_)
         except Exception as e:
@@ -144,6 +148,13 @@ class MotorniczyTopN(APIView):
                 new = dict(y.data)
                 new['sum'] = p['wynagrodzenie__sum']
                 all_.append(new)
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie {n} najlepiej zarabiających motorniczych."
+                }
+                )
 
             return Response(all_)
         except Exception as e:
@@ -187,6 +198,14 @@ class MotorniczyTopNOkres(APIView):
                 new['caly_zarobek']= a['wynagrodzenie__sum']
                 all_.append(new)
 
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie najlepiej zarabiajacych motorniczych w {quarter} kwartale"
+                }
+            )
+
             return Response(all_)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -198,18 +217,28 @@ class TramwajTopN(APIView):
 
     def get(self, request, n):
         try:
-            x = Praca.objects.values('id_tramwaju').annotate(Sum(''))[:n]
+            trams = Tramwaj.objects.all()
             all_ = []
-            for p in x:
-                motorniczy = Motorniczy.objects.all().filter(id_motorniczego=p['id_motorniczego'])
+            for tram in trams:
+                tram_jobs = Praca.objects.all().filter(id_tramwaju=tram.id_tramwaju)
+                sum = timedelta()
 
-                motorniczy.sum = p['wynagrodzenie__sum']
-                y = MotorniczySerializer(motorniczy[0])
+                for x in tram_jobs:
+                    sum += (x.koniecpracy - x.poczatekpracy)
+                tramwaj = Tramwaj.objects.all().filter(id_tramwaju=tram.id_tramwaju)
+                y = TramwajSerializer(tramwaj[0])
                 new = dict(y.data)
-                new['sum'] = p['wynagrodzenie__sum']
+                new['sum'] = str(sum)
                 all_.append(new)
-
-            return Response(all_)
+            newlist = sorted(all_, key=lambda k: k['sum'], reverse=True)[:n]
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Wyświetlenie {n}  najczęściej używanych tramwajów."
+                }
+            )
+            return Response(newlist)
         except Exception as e:
             return Response({'message': f'{e}'})
 
@@ -226,6 +255,13 @@ class TramwajView(APIView):
                 versions[self.model_name] = {}
             versions[self.model_name][pk] = x[0].version
             y = TramwajSerializer(x[0])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie tramwaju o id {pk}"
+                }
+            )
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -239,11 +275,18 @@ class TramwajView(APIView):
             serializer = TramwajSerializer(updated, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"PUT", 
+                    "description":f"Edycja tramwaju o id {pk}"
+                }
+                 )
                 return Response(serializer.data)
+           
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-
 
 class LiniaView(APIView):
     model_name = "Linia"
@@ -258,6 +301,13 @@ class LiniaView(APIView):
                 versions[self.model_name] = {}
             versions[self.model_name][pk] = x[0].version
             y = LiniaSerializer(x[0])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie linii o id {pk}"
+                }
+                )
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -271,6 +321,13 @@ class LiniaView(APIView):
             serializer = LiniaSerializer(updated, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"PUT", 
+                    "description":f"Edycja linii o id {pk}"
+                }
+                )
                 return Response(serializer.data)
             return Response(serializer.errors)
         except Exception as e:
@@ -290,6 +347,13 @@ class MotorniczyView(APIView):
                 versions[self.model_name] = {}
             versions[self.model_name][pk] = x[0].version
             y = MotorniczySerializer(x[0])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie {pk} motorniczego"
+                }
+            )
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -303,6 +367,13 @@ class MotorniczyView(APIView):
             serializer = MotorniczySerializer(updated, data=request.data)
             if serializer.is_valid():
                 serializer.save()
+                db['tramwaje'].insert_one(
+                    {
+                        "time": datetime.datetime.utcnow(),
+                        "typerequest": "PUT",
+                        "description": f"Edycja {pk} motorniczego"
+                    }
+                )
                 return Response(serializer.data)
             return Response(serializer.errors)
         except Exception as e:
@@ -317,12 +388,26 @@ class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie tramwajow"
+                }
+            )
             return self.list(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
 
     def post(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie tramwaju"
+                }
+            )
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -334,12 +419,26 @@ class LiniaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie linii"
+                }
+            )
             return self.list(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
 
     def post(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie linii"
+                }
+            )
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -351,12 +450,26 @@ class MotorniczyListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie motorniczych"
+                }
+            )
             return self.list(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
 
     def post(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie motorniczego"
+                }
+            )
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -368,12 +481,26 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie wszytskich prac."
+                }
+            )
             return self.list(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
 
     def post(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie pracy"
+                }
+            )
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -389,12 +516,85 @@ class PracaDetailView(APIView):
             y = PracaSerializer(x[0])
             print(self.version)
             self.version = x[0].version
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie {pk} pracy"
+                }
+            )
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
 
     def post(self, request, *args, **kwargs):
         try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie pracy"
+                }
+            )
             return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+
+
+class Statystyki(APIView):
+    model_name = "Praca"
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request):
+        try:
+            all_ = []
+            trams = Tramwaj.objects.all()
+            for tram in trams:
+                sum = timedelta()
+
+                tram_jobs = Praca.objects.all().filter(id_tramwaju=tram.id_tramwaju)
+                for x in tram_jobs:
+                    sum += (x.koniecpracy - x.poczatekpracy)
+                tramwaj = Tramwaj.objects.all().filter(id_tramwaju=tram.id_tramwaju)
+                y = TramwajSerializer(tramwaj[0])
+                new = dict(y.data)
+                new['sum'] = str(sum)
+                all_.append(new)
+            s = sorted(all_, key=lambda k: k['sum'], reverse=True)
+            output = []
+            output.append(s[0])
+            output.append(s[-1])
+
+            all_2 = []
+            ppl = Motorniczy.objects.all()
+            for person in ppl:
+                sum = 0
+
+                person_jobs = Praca.objects.all().filter(id_motorniczego=person.id_motorniczego)
+                for x in person_jobs:
+                    if x.wynagrodzenie:
+                        sum += x.wynagrodzenie
+                motorniczy = Motorniczy.objects.all().filter(id_motorniczego=person.id_motorniczego)
+                y = MotorniczySerializer(motorniczy[0])
+                new = dict(y.data)
+                new['sum'] = str(sum)
+                all_.append(new)
+            s = sorted(all_, key=lambda k: k['sum'], reverse=True)
+            output.append(s[0])
+            output.append(s[-1])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie statystyk."
+                }
+            )
+
+
+
+            return Response(output)
         except Exception as e:
             return Response({'message': f'{e}'})
