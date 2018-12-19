@@ -6,9 +6,30 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from datetime import date, timedelta
-
+from pymongo import * 
+import json 
+import time 
+import datetime 
+#from tramwaje.models import User
 versions = {}
+client = MongoClient('localhost', 27017)
+db = client['tramwajeLogi']
 
+class testMongo(APIView):
+    '''Test praca detail'''
+    model_name = "Test"
+   
+    # queryset = Praca.objects.all()
+    # serializer_class = PracaSerializer
+
+    def get(self, request):
+        global versions
+        try:
+            dic =  db['tramwaje'].find_one()
+            del dic['_id']
+            return Response(dic)
+        except Exception as e:
+            return Response({'message': f'{e}'})
 
 class test(APIView):
     '''Test praca detail'''
@@ -42,6 +63,13 @@ class PracaView(APIView):
                 versions[self.model_name] = {}
             versions[self.model_name][pk] = x[0].version
             y = PracaSerializer(x[0])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie {pk} pracy"
+                }
+            )
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
