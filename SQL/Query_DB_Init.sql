@@ -3,16 +3,22 @@
 USE test;
 
 
-DROP TABLE IF EXISTS `Praca`;
+-- ****************** SqlDBM: MySQL ******************;
+-- ***************************************************;
+
+DROP TABLE `Przeglad`;
 
 
-DROP TABLE IF EXISTS `Tramwaj`;
+DROP TABLE `Praca`;
 
 
-DROP TABLE IF EXISTS `Motorniczy`;
+DROP TABLE `Tramwaj`;
 
 
-DROP TABLE IF EXISTS `Linia`;
+DROP TABLE `Motorniczy`;
+
+
+DROP TABLE `Linia`;
 
 
 
@@ -23,7 +29,7 @@ CREATE TABLE `Tramwaj`
  `ID_Tramwaju`       int NOT NULL AUTO_INCREMENT ,
  `Prog_Godzinowy`    int NOT NULL DEFAULT 1000 ,
  `Aktualny_Przebieg` float NOT NULL DEFAULT 0 ,
-  `Version`         int NOT NULL DEFAULT 0 ,
+ `Version`           int NOT NULL DEFAULT 0 ,
 PRIMARY KEY (`ID_Tramwaju`)
 );
 
@@ -41,7 +47,7 @@ CREATE TABLE `Motorniczy`
  `Nazwisko`        varchar(45) NOT NULL ,
  `Stawka`          float NOT NULL DEFAULT 12 ,
  `Zatrudniony`     bit NOT NULL DEFAULT 1 ,
-  `Version`         int NOT NULL DEFAULT 0 ,
+ `Version`         int NOT NULL DEFAULT 0 ,
 PRIMARY KEY (`ID_Motorniczego`)
 );
 
@@ -56,7 +62,7 @@ CREATE TABLE `Linia`
 (
  `ID_Linii`    int NOT NULL AUTO_INCREMENT ,
  `Numer_Linii` int NOT NULL ,
-  `Version`         int NOT NULL DEFAULT 0 ,
+ `Version`     int NOT NULL DEFAULT 0 ,
 PRIMARY KEY (`ID_Linii`)
 );
 
@@ -65,8 +71,24 @@ PRIMARY KEY (`ID_Linii`)
 
 
 
--- ************************************** `Praca`
+-- ************************************** `Przeglad`
 
+CREATE TABLE `Przeglad`
+(
+ `ID_Przegladu` int NOT NULL AUTO_INCREMENT ,
+ `ID_Tramwaju`  int NOT NULL ,
+ `Data`         datetime NOT NULL ,
+PRIMARY KEY (`ID_Przegladu`),
+KEY `fkIdx_57` (`ID_Tramwaju`),
+CONSTRAINT `FK_57` FOREIGN KEY `fkIdx_57` (`ID_Tramwaju`) REFERENCES `Tramwaj` (`ID_Tramwaju`)
+);
+
+
+
+
+
+
+-- ************************************** `Praca`
 
 CREATE TABLE `Praca`
 (
@@ -86,6 +108,15 @@ CONSTRAINT `FK_28` FOREIGN KEY `fkIdx_28` (`ID_Motorniczego`) REFERENCES `Motorn
 KEY `fkIdx_31` (`ID_Tramwaju`),
 CONSTRAINT `FK_31` FOREIGN KEY `fkIdx_31` (`ID_Tramwaju`) REFERENCES `Tramwaj` (`ID_Tramwaju`)
 );
+
+
+
+
+
+
+
+
+
 
 
 
@@ -150,8 +181,15 @@ FOR EACH ROW BEGIN
 	DECLARE Wynagrodzenie_ float;
     DECLARE Nowy_Przebieg_ float;
     DECLARE Stary_Przebieg_ float;
+    DECLARE Stara_wersja_ int;
+	DECLARE Nowa_wersja int;
 
+	SET Stara_wersja_ = OLD.version;
+	SET Nowa_wersja =  NEW.version;
 
+    IF (Stara_wersja_+1 <> Nowa_wersja) THEN
+	SIGNAL sqlstate '45001' set message_text = "Wersje sie nie zgadzaja ";
+    END IF; 
 	if NEW.KoniecPracy IS NOT NULL THEN
 		SELECT Obliczanie_Wynagrodzenia(OLD.ID_Motorniczego, OLD.ID_Pracy) INTO Wynagrodzenie_;
 		SET NEW.Wynagrodzenie = Wynagrodzenie_;
@@ -175,6 +213,7 @@ FOR EACH ROW BEGIN
 	DECLARE Wynagrodzenie_ float;
     DECLARE Nowy_Przebieg_ float;
     DECLARE Stary_Przebieg_ float;
+
 
 	if NEW.KoniecPracy IS NOT NULL THEN
 		SELECT Obliczanie_Wynagrodzenia(NEW.ID_Motorniczego, NEW.ID_Pracy) INTO Wynagrodzenie_;
@@ -222,3 +261,8 @@ END; //
 
 DELIMITER ;
 
+-- ************************************** `Sprawdz_wersje`
+
+
+
+DELIMITER ;
