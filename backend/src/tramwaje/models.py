@@ -1,7 +1,18 @@
 from django.db import models
-
+from datetime import datetime    
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
+class Przeglad(models.Model):
+    id_przegladu = models.AutoField(db_column='ID_Przegladu', primary_key=True)  # Field name made lowercase.
+    id_tramwaju = models.ForeignKey('Tramwaj', models.DO_NOTHING, db_column='ID_Tramwaju'
+                                    )  # Field name made lowercase.
+    date = models.DateTimeField(db_column='Data', default=datetime.now, blank=True)
+  
+    class Meta:
+        managed = False
+        db_table = 'przeglad'
+
 
 
 class Linia(models.Model):
