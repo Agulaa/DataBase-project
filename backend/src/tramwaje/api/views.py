@@ -1,7 +1,7 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.views import APIView
-from tramwaje.models import Tramwaj, Linia, Motorniczy, Praca
-from .serializers import TramwajSerializer, LiniaSerializer, PracaSerializer, MotorniczySerializer
+from tramwaje.models import Tramwaj, Linia, Motorniczy, Praca, Przeglad
+from .serializers import TramwajSerializer, LiniaSerializer, PracaSerializer, MotorniczySerializer, PrzegladSerializer
 from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
@@ -30,6 +30,51 @@ class test(APIView):
             versions[self.model_name][pk] = x[0].version
             y = PracaSerializer(x[0])
             return Response(y.data)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+class PrzegladView(APIView):
+    model_name = "Przeglad"
+    queryset = Przeglad.objects.all()
+    serializer_class = PrzegladSerializer
+
+    def get(self, request, pk):
+        global versions
+        try:
+            x = Przeglad.objects.all().filter(id_przegladu=pk)
+            if self.model_name not in versions:
+                versions[self.model_name] = {}
+            versions[self.model_name][pk] = x[0].version
+            y = PrzegladSerializer(x[0])
+            db['przeglad'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie przegladu o id {pk}."
+                }
+            )
+            return Response(y.data)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+    
+
+    def put(self, request, pk):
+        global versions
+        updated = Przeglad.objects.all().filter(id_przegladu=pk)[0]
+
+        updated.version = versions[self.model_name][pk] + 1
+        try:
+            serializer = PrzegladSerializer(updated, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                db['przeglad'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"PUT", 
+                    "description":f"Aktualizacja przegladu o id {pk}."
+                }
+                )
+                return Response(serializer.data)
+            return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
 
@@ -269,7 +314,6 @@ class TramwajView(APIView):
     def put(self, request, pk):
         global versions
         updated = Tramwaj.objects.all().filter(id_tramwaju=pk)[0]
-
         updated.version = versions[self.model_name][pk] + 1
         try:
             serializer = TramwajSerializer(updated, data=request.data)
@@ -505,6 +549,34 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+class PrzegladListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Przeglad.objects.all()
+    serializer_class = PrzegladSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie wszytskich przegladow."
+                }
+            )
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+    def post(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie przegladu."
+                }
+            )
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
 
 class PracaDetailView(APIView):
     queryset = Praca.objects.all()
@@ -539,6 +611,41 @@ class PracaDetailView(APIView):
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
+
+class PrzegladDetailView(APIView):
+    queryset = Przeglad.objects.all()
+    serializer_class = PrzegladSerializer
+
+    def get(self, request, fk):
+        try:
+            x = Przeglad.objects.all().filter(id_tramwaju=fk)
+            y = PrzegladSerializer(x[0])
+            print(self.version)
+            self.version = x[0].version
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie przegladu dla tramwaju o id {fk}"
+                }
+            )
+            return Response(y.data)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie przegladu"
+                }
+            )
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
 
 
 

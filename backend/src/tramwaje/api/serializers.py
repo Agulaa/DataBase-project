@@ -1,6 +1,10 @@
 from rest_framework import serializers
-from tramwaje.models import Tramwaj, Linia, Praca, Motorniczy
+from tramwaje.models import Tramwaj, Linia, Praca, Motorniczy, Przeglad
 
+class PrzegladSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Przeglad
+        fields = ('id_przegladu', 'id_tramwaju', 'date')
 
 class TramwajSerializer(serializers.ModelSerializer):
     class Meta:
