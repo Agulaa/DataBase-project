@@ -32,49 +32,74 @@ class test(APIView):
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
-class PrzegladView(APIView):
-    model_name = "Przeglad"
-    queryset = Przeglad.objects.all()
-    serializer_class = PrzegladSerializer
+#########################################################################
+#                           PRACA                                       #
+#########################################################################
+
+
+class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie wszytskich prac."
+                }
+            )
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie pracy"
+                }
+            )
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+
+class PracaDetailView(APIView):
+    queryset = Praca.objects.all()
+    serializer_class = PracaSerializer
 
     def get(self, request, pk):
-        global versions
         try:
-            x = Przeglad.objects.all().filter(id_przegladu=pk)
-            if self.model_name not in versions:
-                versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
-            y = PrzegladSerializer(x[0])
-            db['przeglad'].insert_one(
+            x = Praca.objects.all().filter(id_pracy=pk)
+            y = PracaSerializer(x[0])
+            print(self.version)
+            self.version = x[0].version
+            db['tramwaje'].insert_one(
                 {
-                    "time": datetime.datetime.utcnow(), 
-                    "typerequest":"GET", 
-                    "description":f"Wyświetlenie przegladu o id {pk}."
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie {pk} pracy"
                 }
             )
             return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
-    
 
-    def put(self, request, pk):
-        global versions
-        updated = Przeglad.objects.all().filter(id_przegladu=pk)[0]
-
-        updated.version = versions[self.model_name][pk] + 1
+    def post(self, request, *args, **kwargs):
         try:
-            serializer = PrzegladSerializer(updated, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                db['przeglad'].insert_one(
+            db['tramwaje'].insert_one(
                 {
-                    "time": datetime.datetime.utcnow(), 
-                    "typerequest":"PUT", 
-                    "description":f"Aktualizacja przegladu o id {pk}."
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie pracy"
                 }
-                )
-                return Response(serializer.data)
-            return Response(serializer.errors)
+            )
+            return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
 
@@ -123,8 +148,6 @@ class PracaView(APIView):
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-
-
 class PracaViewForOnePerson(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
@@ -175,6 +198,96 @@ class Praca30dayViewForOnePerson(APIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+#########################################################################
+#                           LINIA                                       #
+#########################################################################
+class LiniaView(APIView):
+    model_name = "Linia"
+    queryset = Linia.objects.all()
+    serializer_class = LiniaSerializer
+
+    def get(self, request, pk):
+        global versions
+        try:
+            x = Linia.objects.all().filter(id_linii=pk)
+            if self.model_name not in versions:
+                versions[self.model_name] = {}
+            versions[self.model_name][pk] = x[0].version
+            y = LiniaSerializer(x[0])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie linii o id {pk}"
+                }
+                )
+            return Response(y.data)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def put(self, request, pk):
+        global versions
+        updated = Linia.objects.all().filter(id_linii=pk)[0]
+
+        updated.version = versions[self.model_name][pk] + 1
+        try:
+            serializer = LiniaSerializer(updated, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"PUT", 
+                    "description":f"Edycja linii o id {pk}"
+                }
+                )
+                return Response(serializer.data)
+            return Response(serializer.errors)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+
+
+
+
+##view for tabel
+
+
+
+
+class LiniaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Linia.objects.all()
+    serializer_class = LiniaSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie linii"
+                }
+            )
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie linii"
+                }
+            )
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+#########################################################################
+#                           MOTORNICZY                                  #
+#########################################################################
 
 class MotorniczyTopN(APIView):
     model_name = "Praca"
@@ -254,7 +367,83 @@ class MotorniczyTopNOkres(APIView):
             return Response(all_)
         except Exception as e:
             return Response({'message': f'{e}'})
+class MotorniczyView(APIView):
+    model_name = "Motorniczy"
+    queryset = Motorniczy.objects.all()
+    serializer_class = MotorniczySerializer
 
+    def get(self, request, pk):
+        global versions
+        try:
+            x = Motorniczy.objects.all().filter(id_motorniczego=pk)
+            if self.model_name not in versions:
+                versions[self.model_name] = {}
+            versions[self.model_name][pk] = x[0].version
+            y = MotorniczySerializer(x[0])
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie {pk} motorniczego"
+                }
+            )
+            return Response(y.data)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def put(self, request, pk):
+        global versions
+        updated = Motorniczy.objects.all().filter(id_motorniczego=pk)[0]
+
+        updated.version = versions[self.model_name][pk] + 1
+        try:
+            serializer = MotorniczySerializer(updated, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                db['tramwaje'].insert_one(
+                    {
+                        "time": datetime.datetime.utcnow(),
+                        "typerequest": "PUT",
+                        "description": f"Edycja {pk} motorniczego"
+                    }
+                )
+                return Response(serializer.data)
+            return Response(serializer.errors)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+class MotorniczyListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    queryset = Motorniczy.objects.all()
+    serializer_class = MotorniczySerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie motorniczych"
+                }
+            )
+            return self.list(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+
+    def post(self, request, *args, **kwargs):
+        try:
+            db['tramwaje'].insert_one(
+                {
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "POST",
+                    "description": f"Dodanie motorniczego"
+                }
+            )
+            return self.create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({'message': f'{e}'})
+#########################################################################
+#                           TRAMWAJ                                     #
+#########################################################################
 class TramwajTopN(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
@@ -331,101 +520,6 @@ class TramwajView(APIView):
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-
-class LiniaView(APIView):
-    model_name = "Linia"
-    queryset = Linia.objects.all()
-    serializer_class = LiniaSerializer
-
-    def get(self, request, pk):
-        global versions
-        try:
-            x = Linia.objects.all().filter(id_linii=pk)
-            if self.model_name not in versions:
-                versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
-            y = LiniaSerializer(x[0])
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(), 
-                    "typerequest":"GET", 
-                    "description":f"Wyświetlenie linii o id {pk}"
-                }
-                )
-            return Response(y.data)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-    def put(self, request, pk):
-        global versions
-        updated = Linia.objects.all().filter(id_linii=pk)[0]
-
-        updated.version = versions[self.model_name][pk] + 1
-        try:
-            serializer = LiniaSerializer(updated, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(), 
-                    "typerequest":"PUT", 
-                    "description":f"Edycja linii o id {pk}"
-                }
-                )
-                return Response(serializer.data)
-            return Response(serializer.errors)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-
-class MotorniczyView(APIView):
-    model_name = "Motorniczy"
-    queryset = Motorniczy.objects.all()
-    serializer_class = MotorniczySerializer
-
-    def get(self, request, pk):
-        global versions
-        try:
-            x = Motorniczy.objects.all().filter(id_motorniczego=pk)
-            if self.model_name not in versions:
-                versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
-            y = MotorniczySerializer(x[0])
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "GET",
-                    "description": f"Wyświetlenie {pk} motorniczego"
-                }
-            )
-            return Response(y.data)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-    def put(self, request, pk):
-        global versions
-        updated = Motorniczy.objects.all().filter(id_motorniczego=pk)[0]
-
-        updated.version = versions[self.model_name][pk] + 1
-        try:
-            serializer = MotorniczySerializer(updated, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                db['tramwaje'].insert_one(
-                    {
-                        "time": datetime.datetime.utcnow(),
-                        "typerequest": "PUT",
-                        "description": f"Edycja {pk} motorniczego"
-                    }
-                )
-                return Response(serializer.data)
-            return Response(serializer.errors)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-
-##view for tabel
-
 class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
     queryset = Tramwaj.objects.all()
     serializer_class = TramwajSerializer
@@ -456,99 +550,54 @@ class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+#########################################################################
+#                           PRZEGLAD                                    #
+#########################################################################
+class PrzegladView(APIView):
+    model_name = "Przeglad"
+    queryset = Przeglad.objects.all()
+    serializer_class = PrzegladSerializer
 
-class LiniaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
-    queryset = Linia.objects.all()
-    serializer_class = LiniaSerializer
-
-    def get(self, request, *args, **kwargs):
+    def get(self, request, pk):
+        global versions
         try:
-            db['tramwaje'].insert_one(
+            x = Przeglad.objects.all().filter(id_przegladu=pk)
+            if self.model_name not in versions:
+                versions[self.model_name] = {}
+            versions[self.model_name][pk] = x[0].version
+            y = PrzegladSerializer(x[0])
+            db['przeglad'].insert_one(
                 {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "GET",
-                    "description": f"Wyświetlenie linii"
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"GET", 
+                    "description":f"Wyświetlenie przegladu o id {pk}."
                 }
             )
-            return self.list(request, *args, **kwargs)
+            return Response(y.data)
         except Exception as e:
             return Response({'message': f'{e}'})
+    
 
-    def post(self, request, *args, **kwargs):
+    def put(self, request, pk):
+        global versions
+        updated = Przeglad.objects.all().filter(id_przegladu=pk)[0]
+
+        updated.version = versions[self.model_name][pk] + 1
         try:
-            db['tramwaje'].insert_one(
+            serializer = PrzegladSerializer(updated, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                db['przeglad'].insert_one(
                 {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "POST",
-                    "description": f"Dodanie linii"
+                    "time": datetime.datetime.utcnow(), 
+                    "typerequest":"PUT", 
+                    "description":f"Aktualizacja przegladu o id {pk}."
                 }
-            )
-            return self.create(request, *args, **kwargs)
+                )
+                return Response(serializer.data)
+            return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-
-
-class MotorniczyListView(ListModelMixin, CreateModelMixin, GenericAPIView):
-    queryset = Motorniczy.objects.all()
-    serializer_class = MotorniczySerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "GET",
-                    "description": f"Wyświetlenie motorniczych"
-                }
-            )
-            return self.list(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-    def post(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "POST",
-                    "description": f"Dodanie motorniczego"
-                }
-            )
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-
-class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
-    queryset = Praca.objects.all()
-    serializer_class = PracaSerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "GET",
-                    "description": f"Wyświetlenie wszytskich prac."
-                }
-            )
-            return self.list(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-    def post(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "POST",
-                    "description": f"Dodanie pracy"
-                }
-            )
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
 class PrzegladListView(ListModelMixin, CreateModelMixin, GenericAPIView):
     queryset = Przeglad.objects.all()
     serializer_class = PrzegladSerializer
@@ -577,41 +626,6 @@ class PrzegladListView(ListModelMixin, CreateModelMixin, GenericAPIView):
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
-
-class PracaDetailView(APIView):
-    queryset = Praca.objects.all()
-    serializer_class = PracaSerializer
-
-    def get(self, request, pk):
-        try:
-            x = Praca.objects.all().filter(id_pracy=pk)
-            y = PracaSerializer(x[0])
-            print(self.version)
-            self.version = x[0].version
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "GET",
-                    "description": f"Wyświetlenie {pk} pracy"
-                }
-            )
-            return Response(y.data)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-    def post(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "POST",
-                    "description": f"Dodanie pracy"
-                }
-            )
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
 class PrzegladDetailView(APIView):
     queryset = Przeglad.objects.all()
     serializer_class = PrzegladSerializer
@@ -633,23 +647,11 @@ class PrzegladDetailView(APIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
-    def post(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "POST",
-                    "description": f"Dodanie przegladu"
-                }
-            )
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
+  
 
-
-
-
-
+#########################################################################
+#                           STATYSTYKI                                  #
+#########################################################################
 class Statystyki(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
