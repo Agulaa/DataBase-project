@@ -13,12 +13,15 @@ from .views import (
     PracaViewForOnePerson,
     Praca30dayViewForOnePerson,
     MotorniczyTopN,
-    TramwajTopN
+    TramwajTopN, 
+    MotorniczyTopNOkres,
+    Statystyki, 
+    PrzegladDetailView, 
+    PrzegladView, 
+    PrzegladListView,
 
 
 )
-
-
 
 
 urlpatterns = [
@@ -36,14 +39,15 @@ urlpatterns = [
     path('linia/update/<pk>', LiniaView.as_view()),
     path('praca/update/<pk>', PracaView.as_view()),
     path('tramwaj/update/<pk>', TramwajView.as_view()),
-    path('motorniczy/<pk>/delete', MotorniczyView.as_view()),
-    path('linia/<pk>/delete', LiniaView.as_view()),
-    path('praca/<pk>/delete', PracaView.as_view()),
-    path('tramwaj/<pk>/delete', TramwajView.as_view()),
     path('praca/motorniczy/<int:id_motorniczego>', PracaViewForOnePerson.as_view()),
     path('praca/motorniczy/<int:id_motorniczego>/<int:datetime_year>/<int:datetime_month>/<int:datetime_day>', Praca30dayViewForOnePerson.as_view()),
-
+    path('przeglad/<int:id_tramwaju>', PrzegladDetailView.as_view()), 
+    path('przeglad', PrzegladListView.as_view()), 
+    path('przeglad/<pk>', PrzegladView.as_view()), 
+    path('przeglad/update/<pk>', PrzegladView.as_view()), 
     path('motorniczy/top/<int:n>', MotorniczyTopN.as_view()),
+    path('motorniczy/top/okres/<int:datetime_year>/<int:quarter>', MotorniczyTopNOkres.as_view()),
     path('tramwaj/top/<int:n>', TramwajTopN.as_view()),
+    path('statystyki', Statystyki.as_view()),
 
 ]

@@ -50,6 +50,7 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
                     "description": f"Wyświetlenie wszytskich prac."
                 }
             )
+
             return self.list(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
@@ -502,6 +503,8 @@ class TramwajView(APIView):
 
     def put(self, request, pk):
         global versions
+        if self.model_name not in versions:
+            versions[self.model_name] = {}
         updated = Tramwaj.objects.all().filter(id_tramwaju=pk)[0]
         updated.version = versions[self.model_name][pk] + 1
         try:
@@ -526,6 +529,7 @@ class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
+            
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
