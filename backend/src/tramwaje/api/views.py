@@ -27,7 +27,7 @@ class test(APIView):
             x = Praca.objects.all().filter(id_pracy=pk)
             if self.model_name not in versions:
                 versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
+            versions[self.model_name][int(pk)] = x[0].version
             y = PracaSerializer(x[0])
             return Response(y.data)
         except Exception as e:
@@ -116,7 +116,7 @@ class PracaView(APIView):
             x = Praca.objects.all().filter(id_pracy=pk)
             if self.model_name not in versions:
                 versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
+            versions[self.model_name][int(pk)] = x[0].version
             y = PracaSerializer(x[0])
             db['tramwaje'].insert_one(
                 {
@@ -133,7 +133,7 @@ class PracaView(APIView):
         global versions
         updated = Praca.objects.all().filter(id_pracy=pk)[0]
 
-        updated.version = versions[self.model_name][pk] + 1
+        updated.version = versions[self.model_name][int(pk)] + 1
         try:
             serializer = PracaSerializer(updated, data=request.data)
             if serializer.is_valid():
@@ -213,7 +213,7 @@ class LiniaView(APIView):
             x = Linia.objects.all().filter(id_linii=pk)
             if self.model_name not in versions:
                 versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
+            versions[self.model_name][int(pk)] = x[0].version
             y = LiniaSerializer(x[0])
             db['tramwaje'].insert_one(
                 {
@@ -230,7 +230,7 @@ class LiniaView(APIView):
         global versions
         updated = Linia.objects.all().filter(id_linii=pk)[0]
 
-        updated.version = versions[self.model_name][pk] + 1
+        updated.version = versions[self.model_name][int(pk)] + 1
         try:
             serializer = LiniaSerializer(updated, data=request.data)
             if serializer.is_valid():
@@ -379,7 +379,7 @@ class MotorniczyView(APIView):
             x = Motorniczy.objects.all().filter(id_motorniczego=pk)
             if self.model_name not in versions:
                 versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
+            versions[self.model_name][int(pk)] = x[0].version
             y = MotorniczySerializer(x[0])
             db['tramwaje'].insert_one(
                 {
@@ -396,7 +396,7 @@ class MotorniczyView(APIView):
         global versions
         updated = Motorniczy.objects.all().filter(id_motorniczego=pk)[0]
 
-        updated.version = versions[self.model_name][pk] + 1
+        updated.version = versions[self.model_name][int(pk)] + 1
         try:
             serializer = MotorniczySerializer(updated, data=request.data)
             if serializer.is_valid():
@@ -488,7 +488,7 @@ class TramwajView(APIView):
             x = Tramwaj.objects.all().filter(id_tramwaju=pk)
             if self.model_name not in versions:
                 versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
+            versions[self.model_name][int(pk)] = x[0].version
             y = TramwajSerializer(x[0])
             db['tramwaje'].insert_one(
                 {
@@ -506,7 +506,8 @@ class TramwajView(APIView):
         if self.model_name not in versions:
             versions[self.model_name] = {}
         updated = Tramwaj.objects.all().filter(id_tramwaju=pk)[0]
-        updated.version = versions[self.model_name][pk] + 1
+        updated.version = versions[self.model_name][int(pk)] + 1
+       
         try:
             serializer = TramwajSerializer(updated, data=request.data)
             if serializer.is_valid():
@@ -524,12 +525,19 @@ class TramwajView(APIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    model_name = "Tramwaj"
     queryset = Tramwaj.objects.all()
     serializer_class = TramwajSerializer
 
     def get(self, request, *args, **kwargs):
+        global versions
         try:
-            
+            x = Tramwaj.objects.all()
+            for tramwaj in x:
+                if self.model_name not in versions:
+                    versions[self.model_name] = {}
+                versions[self.model_name][tramwaj.id_tramwaju] = tramwaj.version
+            print(versions)
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
@@ -554,6 +562,9 @@ class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
         except Exception as e:
             return Response({'message': f'{e}'})
 
+
+
+
 #########################################################################
 #                           PRZEGLAD                                    #
 #########################################################################
@@ -568,7 +579,7 @@ class PrzegladView(APIView):
             x = Przeglad.objects.all().filter(id_przegladu=pk)
             if self.model_name not in versions:
                 versions[self.model_name] = {}
-            versions[self.model_name][pk] = x[0].version
+            versions[self.model_name][int(pk)] = x[0].version
             y = PrzegladSerializer(x[0])
             db['przeglad'].insert_one(
                 {
@@ -586,7 +597,7 @@ class PrzegladView(APIView):
         global versions
         updated = Przeglad.objects.all().filter(id_przegladu=pk)[0]
 
-        updated.version = versions[self.model_name][pk] + 1
+        updated.version = versions[self.model_name][int(pk)] + 1
         try:
             serializer = PrzegladSerializer(updated, data=request.data)
             if serializer.is_valid():
@@ -694,8 +705,8 @@ class Statystyki(APIView):
                 y = MotorniczySerializer(motorniczy[0])
                 new = dict(y.data)
                 new['sum'] = str(sum)
-                all_.append(new)
-            s = sorted(all_, key=lambda k: k['sum'], reverse=True)
+                all_2.append(new)
+            s = sorted(all_2, key=lambda k: k['sum'], reverse=True)
             output.append(s[0])
             output.append(s[-1])
             db['tramwaje'].insert_one(
