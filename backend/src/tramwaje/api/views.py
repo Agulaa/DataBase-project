@@ -60,50 +60,6 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
-<<<<<<< HEAD
-=======
-
-
-# class PracaDetailView(APIView):
-#     queryset = Praca.objects.all()
-#     serializer_class = PracaSerializer
-#
-#     def get(self, request, pk):
-#         try:
-#             x = Praca.objects.all().filter(id_pracy=pk)
-#             y = PracaSerializer(x[0])
-#             print(self.version)
-#             self.version = x[0].version
-#             db['tramwaje'].insert_one(
-#                 {
-#                     "time": datetime.datetime.utcnow(),
-#                     "typerequest": "GET",
-#                     "description": f"Wyświetlenie {pk} pracy"
-#                 }
-#             )
-#             return Response(y.data)
-#         except Exception as e:
-#             return Response({'message': f'{e}'})
-#
-#     def post(self, request, *args, **kwargs):
-#         try:
-#             x = Praca.objects.all().filter(id_motorniczego=request.data['id_motorniczego'])
-#             for a in x:
-#                 if a.koniecpracy == None:
-#                     return Response({'message': f'Motorniczy nie zakonczyl jeszcze poprzedniej pracy'})
-#
-#             db['tramwaje'].insert_one(
-#                 {
-#                     "time": datetime.datetime.utcnow(),
-#                     "typerequest": "POST",
-#                     "description": f"Dodanie pracy"
-#                 }
-#             )
-#             return self.create(request, *args, **kwargs)
-#         except Exception as e:
-#             return Response({'message': f'{e}'})
->>>>>>> c6f0d9f77e408578ba1b6422f1935d66ad0b52a5
-
 
 class PracaView(APIView):
     model_name = "Praca"
@@ -149,13 +105,7 @@ class PracaView(APIView):
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
-<<<<<<< HEAD
 
-
-
-=======
-        
->>>>>>> c6f0d9f77e408578ba1b6422f1935d66ad0b52a5
 class PracaViewForOnePerson(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
