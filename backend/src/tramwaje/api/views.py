@@ -57,6 +57,11 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         try:
+            x = Praca.objects.all().filter(id_motorniczego=request.data['id_motorniczego'])
+            for a in x:
+                if a.koniecpracy == None:
+                    return Response({'message': f'Motorniczy nie zakonczyl jeszcze poprzedniej pracy'})
+
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
@@ -69,40 +74,44 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
             return Response({'message': f'{e}'})
 
 
-
-class PracaDetailView(APIView):
-    queryset = Praca.objects.all()
-    serializer_class = PracaSerializer
-
-    def get(self, request, pk):
-        try:
-            x = Praca.objects.all().filter(id_pracy=pk)
-            y = PracaSerializer(x[0])
-            print(self.version)
-            self.version = x[0].version
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "GET",
-                    "description": f"Wyświetlenie {pk} pracy"
-                }
-            )
-            return Response(y.data)
-        except Exception as e:
-            return Response({'message': f'{e}'})
-
-    def post(self, request, *args, **kwargs):
-        try:
-            db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(),
-                    "typerequest": "POST",
-                    "description": f"Dodanie pracy"
-                }
-            )
-            return self.create(request, *args, **kwargs)
-        except Exception as e:
-            return Response({'message': f'{e}'})
+# class PracaDetailView(APIView):
+#     queryset = Praca.objects.all()
+#     serializer_class = PracaSerializer
+#
+#     def get(self, request, pk):
+#         try:
+#             x = Praca.objects.all().filter(id_pracy=pk)
+#             y = PracaSerializer(x[0])
+#             print(self.version)
+#             self.version = x[0].version
+#             db['tramwaje'].insert_one(
+#                 {
+#                     "time": datetime.datetime.utcnow(),
+#                     "typerequest": "GET",
+#                     "description": f"Wyświetlenie {pk} pracy"
+#                 }
+#             )
+#             return Response(y.data)
+#         except Exception as e:
+#             return Response({'message': f'{e}'})
+#
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             x = Praca.objects.all().filter(id_motorniczego=request.data['id_motorniczego'])
+#             for a in x:
+#                 if a.koniecpracy == None:
+#                     return Response({'message': f'Motorniczy nie zakonczyl jeszcze poprzedniej pracy'})
+#
+#             db['tramwaje'].insert_one(
+#                 {
+#                     "time": datetime.datetime.utcnow(),
+#                     "typerequest": "POST",
+#                     "description": f"Dodanie pracy"
+#                 }
+#             )
+#             return self.create(request, *args, **kwargs)
+#         except Exception as e:
+#             return Response({'message': f'{e}'})
 
 
 class PracaView(APIView):
@@ -120,9 +129,9 @@ class PracaView(APIView):
             y = PracaSerializer(x[0])
             db['tramwaje'].insert_one(
                 {
-                    "time": datetime.datetime.utcnow(), 
-                    "typerequest":"GET", 
-                    "description":f"Wyświetlenie pracy o id {pk}."
+                    "time": datetime.datetime.utcnow(),
+                    "typerequest": "GET",
+                    "description": f"Wyświetlenie pracy o id {pk}."
                 }
             )
             return Response(y.data)
@@ -139,16 +148,17 @@ class PracaView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 db['tramwaje'].insert_one(
-                {
-                    "time": datetime.datetime.utcnow(), 
-                    "typerequest":"PUT", 
-                    "description":f"Aktualizacja pracy o id {pk}."
-                }
+                    {
+                        "time": datetime.datetime.utcnow(),
+                        "typerequest": "PUT",
+                        "description": f"Aktualizacja pracy o id {pk}."
+                    }
                 )
                 return Response(serializer.data)
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
+        
 class PracaViewForOnePerson(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
