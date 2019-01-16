@@ -15,34 +15,22 @@ versions = {}
 client = MongoClient('localhost', 27017)
 db = client['tramwajeLogi']
 
-class test(APIView):
-    '''Test praca detail'''
-    model_name = "Praca"
-    queryset = Praca.objects.all()
-    serializer_class = PracaSerializer
 
-    def get(self, request, pk):
-        global versions
-        try:
-            x = Praca.objects.all().filter(id_pracy=pk)
-            if self.model_name not in versions:
-                versions[self.model_name] = {}
-            versions[self.model_name][int(pk)] = x[0].version
-            y = PracaSerializer(x[0])
-            return Response(y.data)
-        except Exception as e:
-            return Response({'message': f'{e}'})
 #########################################################################
 #                           PRACA                                       #
 #########################################################################
-
-
 class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
     queryset = Praca.objects.all()
     serializer_class = PracaSerializer
-
+    model_name = "Praca"
+    global versions
     def get(self, request, *args, **kwargs):
         try:
+            x = Praca.objects.all()
+            for praca in x:
+                if self.model_name not in versions:
+                    versions[self.model_name] = {}
+                versions[self.model_name][praca.id_pracy] = praca.version
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
@@ -72,6 +60,8 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
             return self.create(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
+<<<<<<< HEAD
+=======
 
 
 # class PracaDetailView(APIView):
@@ -112,6 +102,7 @@ class PracaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
 #             return self.create(request, *args, **kwargs)
 #         except Exception as e:
 #             return Response({'message': f'{e}'})
+>>>>>>> c6f0d9f77e408578ba1b6422f1935d66ad0b52a5
 
 
 class PracaView(APIView):
@@ -158,7 +149,13 @@ class PracaView(APIView):
             return Response(serializer.errors)
         except Exception as e:
             return Response({'message': f'{e}'})
+<<<<<<< HEAD
+
+
+
+=======
         
+>>>>>>> c6f0d9f77e408578ba1b6422f1935d66ad0b52a5
 class PracaViewForOnePerson(APIView):
     model_name = "Praca"
     queryset = Praca.objects.all()
@@ -261,17 +258,19 @@ class LiniaView(APIView):
 
 
 
-##view for tabel
-
-
-
-
 class LiniaListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    model_name = "Linia"
     queryset = Linia.objects.all()
     serializer_class = LiniaSerializer
 
     def get(self, request, *args, **kwargs):
+        global versions
         try:
+            x = Linia.objects.all()
+            for linia in x:
+                if self.model_name not in versions:
+                    versions[self.model_name] = {}
+                versions[self.model_name][linia.id_linii] = linia.version
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
@@ -352,7 +351,7 @@ class MotorniczyTopNOkres(APIView):
             
             #.values('id_motorniczego').annotate(Sum('wynagrodzenie'))
             a = Praca.objects.all().filter(poczatekpracy__range=[start, end]).aggregate(Sum('wynagrodzenie'))
-            print(a)
+          
             x = Praca.objects.all().filter(poczatekpracy__range=[start, end]).values('id_motorniczego').annotate(Sum('wynagrodzenie'))
     
             all_ = []
@@ -424,11 +423,18 @@ class MotorniczyView(APIView):
             return Response({'message': f'{e}'})
 
 class MotorniczyListView(ListModelMixin, CreateModelMixin, GenericAPIView):
+    model_name = "Motorniczy"
     queryset = Motorniczy.objects.all()
     serializer_class = MotorniczySerializer
 
     def get(self, request, *args, **kwargs):
+        global versions
         try:
+            x = Motorniczy.objects.all()
+            for motorniczy in x:
+                if self.model_name not in versions:
+                    versions[self.model_name] = {}
+                versions[self.model_name][motorniczy.id_motorniczego] = motorniczy.version
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
@@ -547,7 +553,7 @@ class TramwajListView(ListModelMixin, CreateModelMixin, GenericAPIView):
                 if self.model_name not in versions:
                     versions[self.model_name] = {}
                 versions[self.model_name][tramwaj.id_tramwaju] = tramwaj.version
-            print(versions)
+           
             db['tramwaje'].insert_one(
                 {
                     "time": datetime.datetime.utcnow(),
@@ -639,6 +645,7 @@ class PrzegladListView(ListModelMixin, CreateModelMixin, GenericAPIView):
             return self.list(request, *args, **kwargs)
         except Exception as e:
             return Response({'message': f'{e}'})
+
     def post(self, request, *args, **kwargs):
         try:
             db['tramwaje'].insert_one(
@@ -659,7 +666,7 @@ class PrzegladDetailView(APIView):
         try:
             x = Przeglad.objects.all().filter(id_tramwaju=fk)
             y = PrzegladSerializer(x[0])
-            print(self.version)
+          
             self.version = x[0].version
             db['tramwaje'].insert_one(
                 {
